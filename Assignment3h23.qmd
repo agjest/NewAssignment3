@@ -416,9 +416,134 @@ print(p2022_arb_percent)
 
 ## Spørsmål vedrørende pendle/andels-matrisene for 2000
 
+1\.
+Hvor mange pendlet fra Haugesund til Vindafjord?
+
+121 stk
+
+2\.
+Hvor mange pendlet fra Bokn til Sveio?
+
+Ingen (0 stk)
+
+3\.
+Hvor stor andel av arbeidstakerene som bodde i Karmøy kommune i 2000 jobbet i Bokn kommune?
+
+0,1%
+
+4\.
+Hvor stor andel av arbeidstakerene som bodde i Bokn kommune i 2000 jobbet i Karmøy kommune?
+
+3,7%
+
+5\.
+Hvor stor andel av arbeidstakerne som jobbet i Sveio i 2000 bodde i Haugesund kommune?
+
+8,6%
+
+6\.
+Hvor stor andel av arbeidstakerne som jobbet i Sveio i 2000 bodde i Tysvær kommune?
+
+1,7%
+
+7\.
+Hvor stor andel av arbeidstakerne som jobbet i Haugesund i 2000 bodde i Vindafjord kommune?
+
+1,7%
+
 ## Spørsmål vedrørende pendle/andels-matrisene for 2012
 
+1\.
+Hvor mange pendlet fra Tysvær til Karmøy?
+
+421 stk
+
+2\.
+Hvor mange pendlet fra Karmøy til Tysvær?
+
+569 stk
+
+3\.
+Hvor mange pendlet fra Bokn til Karmøy?
+
+11 stk
+
+4\.
+Hvor mange pendlet fra Karmøy til Bokn?
+
+30 stk
+
+5\.
+Hvor mange pendlet fra Haugesund til Karmøy?
+
+2077 stk
+
+6\.
+Hvor mange pendlet fra Karmøy til Haugesund?
+
+5201 stk
+
+7\.
+Hvor stor andel av arbeidstakerene som bodde i Sveio kommune i 2012 jobbet i Tysvær kommune?
+
+4,7%
+
+8\.
+Hvor stor andel av arbeidstakerene som bodde i Tysvær kommune i 2012 jobbet i Karmøy kommune?
+
+7,7%
+
+9\.
+Hvor stor andel av arbeidstakerne som jobbet i Karmøy i 2012 bodde i Haugesund kommune?
+
+13,9%
+
+10\.
+Hvor stor andel av arbeidstakerne som jobbet i Haugesund i 2012 bodde i Karmøy kommune?
+
+23,7%
+
 ## Spørsmål vedrørende pendle/andels-matrisene for 2022
+
+1\.
+Hvor mange pendlet fra Tysvær til Karmøy?
+
+657 stk
+
+2\.
+Hvor mange pendlet fra Karmøy til Tysvær?
+
+769 stk
+
+3\.
+Hvor mange pendlet fra Bokn til Karmøy?
+
+45 stk
+
+4\.
+Hvor mange pendlet fra Karmøy til Bokn?
+
+24 stk
+
+5\.
+Hvor mange pendlet fra Haugesund til Karmøy?
+
+2541 stk
+
+6\.
+Hvor mange pendlet fra Karmøy til Haugesund?
+
+5190 stk
+
+7\.
+Hvor stor andel av arbeidstakerne som jobbet i Karmøy i 2011 bodde i Haugesund kommune?
+
+15,8%
+
+8\.
+Hvor stor andel av arbeidstakerne som jobbet i Haugesund i 2011 bodde i Karmøy kommune?
+
+23,2%
 
 # Plots
 
