@@ -1,0 +1,425 @@
+---
+title: "Assignment 3; Pendling"
+format: html
+editor: visual
+language: nb.yaml
+---
+
+```{r}
+#| label: setup
+#| output: false
+#| message: false
+#| echo: false
+library(tidyverse)
+library(tidyselect)
+library(lubridate)
+library(PxWebApiData)
+library(flextable)
+```
+
+# Innledning
+
+## Kommuner på Haugalandet 2022
+
+# Hente data fra SSB
+
+```{r}
+#Get more info about table
+ApiData(
+"http://data.ssb.no/api/v0/en/table/03321",
+returnApiQuery = TRUE
+) 
+```
+
+```{r}
+#| cache: true
+# Datasett med arbeidstakere som bor på Haugalandet
+pend_00_22_ssb_boHland <- PxWebApiData::ApiData12(
+  urlToData = as.character(03321),
+  ArbstedKomm = list("*"),
+  Bokommuen = c("1106", "1135", "1145", "1146", "1149", "1154", "1159", "1160", "4611", "4612", "1211", "1216"),
+  Tid = as.character(2000:2022)
+)
+```
+
+```{r}
+#| cache: true
+# Datasett antall arbeidstakere som arbeider på Haugalandet
+pend_00_22_ssb_arbHland <- PxWebApiData::ApiData12(
+  urlToData = as.character(03321),
+  ArbstedKomm = c("1106", "1135", "1145", "1146", "1149", "1154", "1159", "1160", "4611", "4612", "1211", "1216"),
+  Bokommuen = list("*"),
+  Tid = as.character(2000:2022)
+)
+```
+
+```{r}
+pend_00_22_arbHland <- pend_00_22_ssb_arbHland |> 
+  select(
+    aar = Tid,
+    arb_kom = arbeidsstedskommune,
+    bo_kom = bostedskommune,
+    pendlere = value
+  )
+```
+
+```{r}
+pend_00_22_boHland <- pend_00_22_ssb_boHland |> 
+  select(
+    aar = Tid,
+    arb_kom = arbeidsstedskommune,
+    bo_kom = bostedskommune,
+    pendlere = value
+  )
+```
+
+```{r}
+print(pend_00_22_boHland, n = 5)
+```
+
+```{r}
+print(pend_00_22_arbHland, n = 5)
+```
+
+```{r}
+pend_00_22_arbHland$arb_kom <- fct(pend_00_22_arbHland$arb_kom)
+pend_00_22_boHland$bo_kom <- fct(pend_00_22_boHland$bo_kom)
+
+pend_00_22_arbHland$arb_kom <- fct_collapse(pend_00_22_arbHland$arb_kom, 
+                                      Haugesund = "Haugesund",
+                                      Sauda = "Sauda",
+                                      Bokn = "Bokn",
+                                      Tysvær = "Tysvær",
+                                      Karmøy = "Karmøy",
+                                      Sveio = c("Sveio", "Sveio (-2019)"),
+                                      Etne = c("Etne", "Etne (-2019)"),
+                                      Vindafjord = c("Vindafjord", "Vindafjord (1965-2005)", "Ølen (2002-2005)"),
+                                      other_level = "Andre")
+```
+
+```{r}
+pend_00_22_arbHland$bo_kom <- fct_collapse(pend_00_22_arbHland$bo_kom, 
+                                      Haugesund = "Haugesund",
+                                      Sauda = "Sauda",
+                                      Bokn = "Bokn",
+                                      Tysvær = "Tysvær",
+                                      Karmøy = "Karmøy",
+                                      Sveio = c("Sveio", "Sveio (-2019)"),
+                                      Etne = c("Etne", "Etne (-2019)"),
+                                      Vindafjord = c("Vindafjord", "Vindafjord (1965-2005)", "Ølen (2002-2005)"),
+                                      other_level = "Andre")
+```
+
+```{r}
+pend_00_22_boHland$bo_kom <- fct_collapse(pend_00_22_boHland$bo_kom, 
+                                     Haugesund = "Haugesund",
+                                     Sauda = "Sauda",
+                                     Bokn = "Bokn",
+                                     Tysvær = "Tysvær",
+                                     Karmøy = "Karmøy",
+                                     Sveio = c("Sveio", "Sveio (-2019)"),
+                                      Etne = c("Etne", "Etne (-2019)"),
+                                     Vindafjord = c("Vindafjord", "Vindafjord (1965-2005)", "Ølen (2002-2005)"),
+                                     other_level = "Andre")
+```
+
+```{r}
+pend_00_22_boHland$arb_kom <- fct_collapse(pend_00_22_boHland$arb_kom, 
+                                      Haugesund = "Haugesund",
+                                      Sauda = "Sauda",
+                                      Bokn = "Bokn",
+                                      Tysvær = "Tysvær",
+                                      Karmøy = "Karmøy",
+                                      Sveio = c("Sveio", "Sveio (-2019)"),
+                                      Etne = c("Etne", "Etne (-2019)"),
+                                      Vindafjord = c("Vindafjord", "Vindafjord (1965-2005)", "Ølen (2002-2005)"),
+                                      other_level = "Andre")
+```
+
+```{r}
+# eval: false
+   pend_00_22_arbHland <- pend_00_22_arbHland |>
+     group_by(aar, bo_kom, arb_kom) |>
+     summarise(pendlere = sum(pendlere), .groups = "drop")
+```
+
+```{r}
+dim(pend_00_22_arbHland)
+```
+
+```{r}
+pend_00_22_arbHland |>
+     head(n = 5)
+```
+
+```{r}
+# eval: false
+   pend_00_22_boHland <- pend_00_22_boHland |>
+     group_by(aar, arb_kom, bo_kom) |>
+     summarise(pendlere = sum(pendlere), .groups = "drop")
+```
+
+```{r}
+dim(pend_00_22_boHland)
+```
+
+```{r}
+pend_00_22_boHland |>
+     head(n = 5)
+```
+
+```{r}
+pmat_long <- pend_00_22_arbHland |> 
+  full_join(
+    pend_00_22_boHland,
+    by = c("aar", "arb_kom", "bo_kom", "pendlere")
+  ) |> 
+  ungroup()
+```
+
+```{r}
+dim(pmat_long)
+```
+
+```{r}
+pmat_long |> head(n = 5)
+```
+
+```{r}
+# Anta at 'pmat_long' er ditt primære datasett og inneholder kolonnene 'aar', 'bo_kom', 'arb_kom', og 'pendlere'.
+
+# Beregn 'bo_percent' og 'arb_percent' direkte i 'pmat_long'
+pmat_long <- pmat_long %>%
+  group_by(bo_kom, aar) %>%
+  mutate(total_bo_kom = sum(pendlere), 
+         bo_percent = round((pendlere / total_bo_kom) * 100, 1)) %>%
+  ungroup() %>%
+  group_by(arb_kom, aar) %>%
+  mutate(total_arb_kom = sum(pendlere), 
+         arb_percent = round((pendlere / total_arb_kom) * 100, 1)) %>%
+  ungroup() %>%
+  select(-total_bo_kom, -total_arb_kom)
+
+# Skriv ut 'pmat_long' for å bekrefte endringene
+print(head(pmat_long))
+```
+
+```{r}
+dim(pmat_long)
+```
+
+```{r}
+pmat_long |> head(n = 5)
+```
+
+## Pendlematriser år 2000
+
+```{r}
+ordKom <- c("Haugesund", "Karmøy", "Tysvær", "Sveio", "Bokn", "Vindafjord", "Sauda", "Etne", "Andre")
+
+# Filtrer datasettet for år 2000 og transformer det til en bredere format
+p2000 <- pmat_long %>%
+  filter(aar == 2000) %>%
+  select(bo_kom, arb_kom, pendlere) %>%
+  pivot_wider(names_from = arb_kom, values_from = pendlere, names_sort = TRUE) %>%
+  mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
+  arrange(bo_kom) %>%
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
+
+# Skriv ut 'p2000' for å bekrefte endringene
+print(p2000)
+```
+
+```{r}
+#| label: tbl-p2000
+   #| tbl-cap: "Pendlematrise for Haugalandet år 2000."
+   p2000 |>
+     flextable() |>
+     # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+     fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+     line_spacing(space = 0,
+part = "body"
+                 ) %>%
+     hrule(rule = "exact")  %>%
+     height_all(height = 5, part = "all", unit = "mm") |>
+     padding(padding.top = 1, padding.bottom = 2, part = "all") %>%
+     theme_booktabs()
+```
+
+```{r}
+p2000_percent <- pmat_long %>%
+  filter(aar == 2000) %>%
+  group_by(bo_kom) %>%
+  mutate(total_pendlere = sum(pendlere)) %>%
+  ungroup() %>%
+  mutate(bo_percent = round((pendlere / total_pendlere) * 100, 1)) %>%
+  select(bo_kom, arb_kom, bo_percent) %>%
+  pivot_wider(names_from = arb_kom, values_from = bo_percent, names_sort = TRUE) %>%
+  mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
+  arrange(bo_kom) %>%
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
+
+# Skriv ut 'p2000_percent' for å bekrefte endringene
+print(p2000_percent)
+```
+
+```{r}
+#| label: tbl-p2000
+   #| tbl-cap: "Dem som bor på Haugalandet og andelen som jobber i kommunene."
+   p2000_percent |>
+     flextable() |>
+     # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+     fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+     line_spacing(space = 0,
+part = "body"
+                 ) %>%
+     hrule(rule = "exact")  %>%
+     height_all(height = 5, part = "all", unit = "mm") |>
+     padding(padding.top = 1, padding.bottom = 2, part = "all") %>%
+     theme_booktabs()
+```
+
+```{r}
+p2000_arb_percent <- pmat_long %>%
+  filter(aar == 2000) %>%
+  group_by(arb_kom) %>%
+  mutate(total_arb = sum(pendlere)) %>%
+  ungroup() %>%
+  mutate(arb_percent = round((pendlere / total_arb) * 100, 1)) %>%
+  select(arb_kom, bo_kom, arb_percent) %>%
+  pivot_wider(names_from = bo_kom, values_from = arb_percent, names_sort = TRUE) %>%
+  mutate(arb_kom = factor(arb_kom, levels = ordKom)) %>%
+  arrange(arb_kom) %>%
+  select(`Arb. kom\\ Bo kom` = arb_kom, all_of(ordKom))
+
+# Skriv ut 'p2000_arb_percent' for å bekrefte endringene
+print(p2000_arb_percent)
+```
+
+```{r}
+#| label: tbl-p2000
+   #| tbl-cap: "Dem som arbeider på Haugalandet og andelen som bor i de ulike kommunene."
+   p2000_arb_percent |>
+     flextable() |>
+     # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+     fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+     line_spacing(space = 0,
+part = "body"
+                 ) %>%
+     hrule(rule = "exact")  %>%
+     height_all(height = 5, part = "all", unit = "mm") |>
+     padding(padding.top = 1, padding.bottom = 2, part = "all") %>%
+     theme_booktabs()
+```
+
+## Pendlematriser år 2012
+
+```{r}
+# Filtrer datasettet for år 2012 og transformer det til en bredere format
+p2012 <- pmat_long %>%
+  filter(aar == 2012) %>%
+  select(bo_kom, arb_kom, pendlere) %>%
+  pivot_wider(names_from = arb_kom, values_from = pendlere, names_sort = TRUE) %>%
+  mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
+  arrange(bo_kom) %>%
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
+
+# Skriv ut 'p2012' for å bekrefte endringene
+print(p2012)
+```
+
+```{r}
+p2012_percent <- pmat_long %>%
+  filter(aar == 2012) %>%
+  group_by(bo_kom) %>%
+  mutate(total_pendlere = sum(pendlere)) %>%
+  ungroup() %>%
+  mutate(bo_percent = round((pendlere / total_pendlere) * 100, 1)) %>%
+  select(bo_kom, arb_kom, bo_percent) %>%
+  pivot_wider(names_from = arb_kom, values_from = bo_percent, names_sort = TRUE) %>%
+  mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
+  arrange(bo_kom) %>%
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
+
+# Skriv ut 'p2012_percent' for å bekrefte endringene
+print(p2012_percent)
+```
+
+```{r}
+p2012_arb_percent <- pmat_long %>%
+  filter(aar == 2012) %>%
+  group_by(arb_kom) %>%
+  mutate(total_arb = sum(pendlere)) %>%
+  ungroup() %>%
+  mutate(arb_percent = round((pendlere / total_arb) * 100, 1)) %>%
+  select(arb_kom, bo_kom, arb_percent) %>%
+  pivot_wider(names_from = bo_kom, values_from = arb_percent, names_sort = TRUE) %>%
+  mutate(arb_kom = factor(arb_kom, levels = ordKom)) %>%
+  arrange(arb_kom) %>%
+  select(`Arb. kom\\ Bo kom` = arb_kom, all_of(ordKom))
+
+# Skriv ut 'p2012_arb_percent' for å bekrefte endringene
+print(p2012_arb_percent)
+```
+
+## Pendlematriser år 2022
+
+```{r}
+# Filtrer datasettet for år 2022 og transformer det til en bredere format
+p2022 <- pmat_long %>%
+  filter(aar == 2022) %>%
+  select(bo_kom, arb_kom, pendlere) %>%
+  pivot_wider(names_from = arb_kom, values_from = pendlere, names_sort = TRUE) %>%
+  mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
+  arrange(bo_kom) %>%
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
+
+# Skriv ut 'p2022' for å bekrefte endringene
+print(p2022)
+```
+
+```{r}
+p2022_percent <- pmat_long %>%
+  filter(aar == 2022) %>%
+  group_by(bo_kom) %>%
+  mutate(total_pendlere = sum(pendlere)) %>%
+  ungroup() %>%
+  mutate(bo_percent = round((pendlere / total_pendlere) * 100, 1)) %>%
+  select(bo_kom, arb_kom, bo_percent) %>%
+  pivot_wider(names_from = arb_kom, values_from = bo_percent, names_sort = TRUE) %>%
+  mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
+  arrange(bo_kom) %>%
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
+
+# Skriv ut 'p2022_percent' for å bekrefte endringene
+print(p2022_percent)
+```
+
+```{r}
+p2022_arb_percent <- pmat_long %>%
+  filter(aar == 2022) %>%
+  group_by(arb_kom) %>%
+  mutate(total_arb = sum(pendlere)) %>%
+  ungroup() %>%
+  mutate(arb_percent = round((pendlere / total_arb) * 100, 1)) %>%
+  select(arb_kom, bo_kom, arb_percent) %>%
+  pivot_wider(names_from = bo_kom, values_from = arb_percent, names_sort = TRUE) %>%
+  mutate(arb_kom = factor(arb_kom, levels = ordKom)) %>%
+  arrange(arb_kom) %>%
+  select(`Arb. kom\\ Bo kom` = arb_kom, all_of(ordKom))
+
+# Skriv ut 'p2022_arb_percent' for å bekrefte endringene
+print(p2022_arb_percent)
+```
+
+# Spørsmål
+
+## Spørsmål vedrørende pendle/andels-matrisene for 2000
+
+## Spørsmål vedrørende pendle/andels-matrisene for 2012
+
+## Spørsmål vedrørende pendle/andels-matrisene for 2022
+
+# Plots
+
+## Oppgave
