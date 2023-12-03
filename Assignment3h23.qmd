@@ -186,9 +186,7 @@ pmat_long |> head(n = 5)
 ```
 
 ```{r}
-# Anta at 'pmat_long' er ditt primære datasett og inneholder kolonnene 'aar', 'bo_kom', 'arb_kom', og 'pendlere'.
-
-# Beregn 'bo_percent' og 'arb_percent' direkte i 'pmat_long'
+# Beregner 'bo_percent' og 'arb_percent' direkte i 'pmat_long'
 pmat_long <- pmat_long %>%
   group_by(bo_kom, aar) %>%
   mutate(total_bo_kom = sum(pendlere), 
@@ -547,4 +545,104 @@ Hvor stor andel av arbeidstakerne som jobbet i Haugesund i 2011 bodde i Karmøy 
 
 # Plots
 
-## Oppgave
+```{r}
+# Figur 1: Andel av de som jobber i Haugesund som bor i de ulike kommunene på Haugalandet. Viser utviklingen for perioden 2000-2022. Det er andel av total arbeidsstyrke som vises på vertikal akse.
+pmat_long |>
+  filter(arb_kom == "Haugesund") |>
+  mutate(
+    år = ymd(str_c(aar, "12", "31")),
+    `Bo andel` = arb_percent,
+    `Bo kom.` = fct(as.character(bo_kom), levels = ordKom[!ordKom %in% c("bo_kom")])
+  ) |>
+  ggplot(aes(x = år, y = `Bo andel`, color = `Bo kom.`, linetype = `Bo kom.`, group = `Bo kom.`)) +
+  geom_line(linewidth = .8) +
+  scale_fill_discrete(ordKom[!ordKom %in% c("bo_kom")]) +
+  guides(
+    colour = guide_legend(title = "Bo andel", title.position = "top"),
+    linetype = guide_legend(title = "Bo andel", title.position = "top")
+  ) + 
+  theme(
+    legend.key.size = unit(2,"line"),
+    legend.position = "bottom"
+  )
+```
+
+```{r}
+pmat_long |>
+     filter(arb_kom == "Haugesund" & !bo_kom %in% c("Haugesund", "Karmøy")) |>
+     mutate(
+       # setter 31/12 siden pendledataene er for 4. kvartal
+       år = ymd(str_c(aar, "12", "31")),
+       `Bo andel` = arb_percent,
+       `Bo kom.` = fct(as.character(bo_kom, levels = ordKom[!ordKom %in% c("bo_kom", "Haugesund", "Karmøy")]))
+       ) |>
+     ggplot(aes(x = år,
+                y = `Bo andel`,
+                color = `Bo kom.`,
+                linetype = `Bo kom.`,
+                group = `Bo kom.`)
+) + geom_line(linewidth = .8) +
+     scale_fill_discrete(ordKom[!ordKom %in% c("bo_kom", "Haugesund", "Karmøy")]) +
+     guides(
+       colour = guide_legend(
+         title = "Bo andel",
+         title.position = "top"
+         ),
+       linetype = guide_legend(
+         title = "Bo andel",
+         title.position = "top"
+         )
+)+ theme(
+       legend.key.size = unit(2,"line"),
+       legend.position = "bottom"
+       )
+```
+
+### Oppgave
+
+```{r}
+# Tilsvarende plot som ovenfor, men for utviklingen for dem som bor i kommunene Haugesund, Karmøy, Tysvær og Bokn.
+pmat_long |>
+  filter(arb_kom == "Haugesund" & bo_kom %in% c("Haugesund", "Karmøy", "Tysvær", "Bokn")) |>
+  mutate(
+    år = ymd(str_c(aar, "12", "31")),
+    `Bo andel` = arb_percent,
+    `Bo kom.` = fct(as.character(bo_kom), levels = unique(c("Bokn", "Haugesund", "Karmøy", "Tysvær", "Bokn")))
+  ) |>
+  ggplot(aes(x = år, y = `Bo andel`, color = `Bo kom.`, linetype = `Bo kom.`, group = `Bo kom.`)) +
+  geom_line(linewidth = .8) +
+  scale_fill_discrete(unique(c("Bokn", "Haugesund", "Karmøy", "Tysvær", "Bokn"))) +
+  guides(
+    colour = guide_legend(title = "Bo andel", title.position = "top"),
+    linetype = guide_legend(title = "Bo andel", title.position = "top")
+  ) +
+  theme(
+    legend.key.size = unit(2, "line"),
+    legend.position = "bottom"
+  )
+```
+
+```{r}
+# Tilsvarende plot som ovenfor, men for utviklingen for dem som bor i kommunene Tysvær og Bokn, for å se mer i detalj.
+pmat_long |>
+  filter(arb_kom == "Haugesund" & bo_kom %in% c("Tysvær", "Bokn")) |>
+  mutate(
+    år = ymd(str_c(aar, "12", "31")),
+    `Bo andel` = arb_percent,
+    `Bo kom.` = fct(as.character(bo_kom), levels = unique(c("Bokn", "Tysvær", "Bokn")))
+  ) |>
+  ggplot(aes(x = år, y = `Bo andel`, color = `Bo kom.`, linetype = `Bo kom.`, group = `Bo kom.`)) +
+  geom_line(linewidth = .8) +
+  scale_fill_discrete(unique(c("Bokn", "Tysvær", "Bokn"))) +
+  guides(
+    colour = guide_legend(title = "Bo andel", title.position = "top"),
+    linetype = guide_legend(title = "Bo andel", title.position = "top")
+  ) +
+  theme(
+    legend.key.size = unit(2, "line"),
+    legend.position = "bottom"
+  )
+```
+
+Selv om det såkalte T-sambandet åpnet i 2013 og bompengeinnkreving ble avviklet i 2021, ser vi ingen signifikant endring disse årene.
+Konklusjon: Ut fra tabellene og plottene vi har lagd ovenfor er det ikke mulig å se noen effekt på pendlemønsteret mellom de fire kommunene Haugesund, Karmøy, Bokn og Tysvær fra dette prosjektet (T-sambandet).
