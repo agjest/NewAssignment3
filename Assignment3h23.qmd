@@ -1,15 +1,20 @@
 ---
 title: "Assignment 3; Pendling"
-format: html
+format: 
+  html: default
+  pdf:
+    toc: true
 editor: visual
 language: nb.yaml
+## For å lage rapport uten kode
+##execute:
+##  echo: false
 ---
 
 ```{r}
 #| label: setup
 #| output: false
 #| message: false
-#| echo: false
 library(tidyverse)
 library(tidyselect)
 library(lubridate)
@@ -74,11 +79,18 @@ pend_00_22_boHland <- pend_00_22_ssb_boHland |>
 ```
 
 ```{r}
-print(pend_00_22_boHland, n = 5)
+#| paged.print: false
+pend_00_22_boHland |> 
+  head(n = 5) |> 
+  print(width = 70)
 ```
 
 ```{r}
-print(pend_00_22_arbHland, n = 5)
+#| paged.print: false
+# print() har ikke noe n argument
+pend_00_22_arbHland |> 
+  head(n = 5) |> 
+  print(width = 70)
 ```
 
 ```{r}
@@ -186,15 +198,28 @@ pmat_long |> head(n = 5)
 ```
 
 ```{r}
+#| paged.print: false
 # Beregner 'bo_percent' og 'arb_percent' direkte i 'pmat_long'
 pmat_long <- pmat_long %>%
   group_by(bo_kom, aar) %>%
-  mutate(total_bo_kom = sum(pendlere), 
-         bo_percent = round((pendlere / total_bo_kom) * 100, 1)) %>%
+  mutate(
+    total_bo_kom = sum(pendlere), 
+    # ag_comment: Dette var en tabbe av meg. Bedre å regne disse ut med
+    # stor nøyaktighet og så avrunde når tabellene gnereres. Se bruk av
+    # colformat_double() under flextable
+    # bo_percent = round((pendlere / total_bo_kom) * 100, 1)) %>%
+    bo_percent = (pendlere / total_bo_kom) * 100
+    ) %>%
   ungroup() %>%
   group_by(arb_kom, aar) %>%
-  mutate(total_arb_kom = sum(pendlere), 
-         arb_percent = round((pendlere / total_arb_kom) * 100, 1)) %>%
+  mutate(
+    total_arb_kom = sum(pendlere), 
+    # ag_comment: Dette var en tabbe av meg. Bedre å regne disse ut med
+    # stor nøyaktighet og så avrunde når tabellene gnereres. Se bruk av
+    # colformat_double() under flextable
+    # arb_percent = round((pendlere / total_arb_kom) * 100, 1)) %>%
+    arb_percent = (pendlere / total_arb_kom) * 100
+    ) %>%
   ungroup() %>%
   select(-total_bo_kom, -total_arb_kom)
 
@@ -214,200 +239,244 @@ pmat_long |> head(n = 5)
 
 ```{r}
 ordKom <- c("Haugesund", "Karmøy", "Tysvær", "Sveio", "Bokn", "Vindafjord", "Sauda", "Etne", "Andre")
+```
 
+```{r}
+set_flextable_defaults(
+     decimal.mark = ",",
+     big.mark = " ",
+     digits = 2,
+     line_spacing = 1,
+     padding.bottom = 2,
+     padding.top = 2,
+     padding.left = 2,
+     padding.right = 2,
+     theme_fun = "theme_booktabs"
+)
+```
+
+```{r}
+#| label: tbl-p2000
+#| tbl-cap: "Pendlematrise for Haugalandet år 2000."
+# ag_comment: Foreslåpr å lage tabellene «on-the-fly» fra pmat_long så får
+# vi færre objekter å holde styr på. Se også bruk av set_flextable_default()
+# i chunken ovenfor. Denne sparer oss litt skrivearbeide og sikrer oss tabeller med
+# konsistent formatering.
 # Filtrer datasettet for år 2000 og transformer det til en bredere format
-p2000 <- pmat_long %>%
+pmat_long %>%
   filter(aar == 2000) %>%
   select(bo_kom, arb_kom, pendlere) %>%
   pivot_wider(names_from = arb_kom, values_from = pendlere, names_sort = TRUE) %>%
   mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
   arrange(bo_kom) %>%
-  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom)) |> 
+  flextable() |>
+  # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+  fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+  hrule(rule = "exact")  %>%
+  height_all(height = 5, part = "all", unit = "mm")
 
 # Skriv ut 'p2000' for å bekrefte endringene
-print(p2000)
+# print(p2000)
 ```
 
-```{r}
-#| label: tbl-p2000
-   #| tbl-cap: "Pendlematrise for Haugalandet år 2000."
-   p2000 |>
-     flextable() |>
-     # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
-     fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
-     line_spacing(space = 0,
-part = "body"
-                 ) %>%
-     hrule(rule = "exact")  %>%
-     height_all(height = 5, part = "all", unit = "mm") |>
-     padding(padding.top = 1, padding.bottom = 2, part = "all") %>%
-     theme_booktabs()
-```
+I @tbl-p2000 er gjengitt pendlematrisen for Haugalandet år 2000.
 
 ```{r}
-p2000_percent <- pmat_long %>%
+#| label: tbl-p2000_bo_percent
+#| tbl-cap: "Dem som bor på Haugalandet og andelen som jobber i de ulike kommunene."
+# ag_comment: Foreslå igjen å gjøre dette «on-the-fly»
+pmat_long %>%
   filter(aar == 2000) %>%
   group_by(bo_kom) %>%
   mutate(total_pendlere = sum(pendlere)) %>%
   ungroup() %>%
-  mutate(bo_percent = round((pendlere / total_pendlere) * 100, 1)) %>%
+  # ag_comment: neste linje unødvendig
+  # mutate(bo_percent = round((pendlere / total_pendlere) * 100, 1)) %>%
   select(bo_kom, arb_kom, bo_percent) %>%
   pivot_wider(names_from = arb_kom, values_from = bo_percent, names_sort = TRUE) %>%
   mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
   arrange(bo_kom) %>%
-  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom)) |> 
+  flextable() |>
+  # ag_comment: Her velger vi to desimaler og setter på %-tegn
+  colformat_double(digits = 2, suffix = "%") |> 
+  # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+  fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+  hrule(rule = "exact")  %>%
+  height_all(height = 5, part = "all", unit = "mm")
 
 # Skriv ut 'p2000_percent' for å bekrefte endringene
-print(p2000_percent)
+# print(p2000_percent)
 ```
 
 ```{r}
-#| label: tbl-p2000
-   #| tbl-cap: "Dem som bor på Haugalandet og andelen som jobber i kommunene."
-   p2000_percent |>
-     flextable() |>
-     # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
-     fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
-     line_spacing(space = 0,
-part = "body"
-                 ) %>%
-     hrule(rule = "exact")  %>%
-     height_all(height = 5, part = "all", unit = "mm") |>
-     padding(padding.top = 1, padding.bottom = 2, part = "all") %>%
-     theme_booktabs()
-```
-
-```{r}
-p2000_arb_percent <- pmat_long %>%
+#| label: tbl-p2000-arb-percent
+#| tbl-cap: "Dem som arbeider på Haugalandet og andelen som bor i de ulike kommunene."
+# ag_comment: «on-the-fly» tabell
+pmat_long %>%
   filter(aar == 2000) %>%
   group_by(arb_kom) %>%
   mutate(total_arb = sum(pendlere)) %>%
   ungroup() %>%
-  mutate(arb_percent = round((pendlere / total_arb) * 100, 1)) %>%
+  # ag_comment: neste unødvendig
+  # mutate(arb_percent = round((pendlere / total_arb) * 100, 1)) %>%
   select(arb_kom, bo_kom, arb_percent) %>%
   pivot_wider(names_from = bo_kom, values_from = arb_percent, names_sort = TRUE) %>%
   mutate(arb_kom = factor(arb_kom, levels = ordKom)) %>%
   arrange(arb_kom) %>%
-  select(`Arb. kom\\ Bo kom` = arb_kom, all_of(ordKom))
+  select(`Arb. kom\\ Bo kom` = arb_kom, all_of(ordKom)) |> 
+  flextable() |>
+  colformat_double(digits = 2, suffix = "%") |> 
+  # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+  fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+  hrule(rule = "exact")  %>%
+  height_all(height = 5, part = "all", unit = "mm")
 
 # Skriv ut 'p2000_arb_percent' for å bekrefte endringene
-print(p2000_arb_percent)
-```
-
-```{r}
-#| label: tbl-p2000
-   #| tbl-cap: "Dem som arbeider på Haugalandet og andelen som bor i de ulike kommunene."
-   p2000_arb_percent |>
-     flextable() |>
-     # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
-     fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
-     line_spacing(space = 0,
-part = "body"
-                 ) %>%
-     hrule(rule = "exact")  %>%
-     height_all(height = 5, part = "all", unit = "mm") |>
-     padding(padding.top = 1, padding.bottom = 2, part = "all") %>%
-     theme_booktabs()
+# print(p2000_arb_percent)
 ```
 
 ## Pendlematriser år 2012
 
+ag_comment: Kopierer kode for de tre tabellene ovenfor å endrer fra 2000 til 2012
+
 ```{r}
+#| label: tbl-p2012
+#| tbl-cap: "Pendlematrise for Haugalandet år 2012."
+# ag_comment: Foreslåpr å lage tabellene «on-the-fly» fra pmat_long så får
+# vi færre objekter å holde styr på. Se også bruk av set_flextable_default()
+# i chunken ovenfor. Denne sparer oss litt skrivearbeide og sikrer oss tabeller med
+# konsistent formatering.
 # Filtrer datasettet for år 2012 og transformer det til en bredere format
-p2012 <- pmat_long %>%
+pmat_long %>%
   filter(aar == 2012) %>%
   select(bo_kom, arb_kom, pendlere) %>%
   pivot_wider(names_from = arb_kom, values_from = pendlere, names_sort = TRUE) %>%
   mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
   arrange(bo_kom) %>%
-  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
-
-# Skriv ut 'p2012' for å bekrefte endringene
-print(p2012)
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom)) |> 
+  flextable() |>
+  # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+  fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+  hrule(rule = "exact")  %>%
+  height_all(height = 5, part = "all", unit = "mm")
 ```
 
 ```{r}
-p2012_percent <- pmat_long %>%
+#| label: tbl-p2012_bo_percent
+#| tbl-cap: "Dem som bor på Haugalandet og andelen som jobber i de ulike kommunene."
+# ag_comment: Foreslå igjen å gjøre dette «on-the-fly»
+pmat_long %>%
   filter(aar == 2012) %>%
   group_by(bo_kom) %>%
   mutate(total_pendlere = sum(pendlere)) %>%
   ungroup() %>%
-  mutate(bo_percent = round((pendlere / total_pendlere) * 100, 1)) %>%
   select(bo_kom, arb_kom, bo_percent) %>%
   pivot_wider(names_from = arb_kom, values_from = bo_percent, names_sort = TRUE) %>%
   mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
   arrange(bo_kom) %>%
-  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
-
-# Skriv ut 'p2012_percent' for å bekrefte endringene
-print(p2012_percent)
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom)) |> 
+  flextable() |>
+  # ag_comment: Her velger vi to desimaler og setter på %-tegn
+  colformat_double(digits = 2, suffix = "%") |> 
+  # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+  fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+  hrule(rule = "exact")  %>%
+  height_all(height = 5, part = "all", unit = "mm")
 ```
 
 ```{r}
-p2012_arb_percent <- pmat_long %>%
+#| label: tbl-p2012-arb-percent
+#| tbl-cap: "Dem som arbeider på Haugalandet og andelen som bor i de ulike kommunene."
+# ag_comment: «on-the-fly» tabell
+pmat_long %>%
   filter(aar == 2012) %>%
   group_by(arb_kom) %>%
   mutate(total_arb = sum(pendlere)) %>%
   ungroup() %>%
-  mutate(arb_percent = round((pendlere / total_arb) * 100, 1)) %>%
   select(arb_kom, bo_kom, arb_percent) %>%
   pivot_wider(names_from = bo_kom, values_from = arb_percent, names_sort = TRUE) %>%
   mutate(arb_kom = factor(arb_kom, levels = ordKom)) %>%
   arrange(arb_kom) %>%
-  select(`Arb. kom\\ Bo kom` = arb_kom, all_of(ordKom))
-
-# Skriv ut 'p2012_arb_percent' for å bekrefte endringene
-print(p2012_arb_percent)
+  select(`Arb. kom\\ Bo kom` = arb_kom, all_of(ordKom)) |> 
+  flextable() |>
+  colformat_double(digits = 2, suffix = "%") |> 
+  # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+  fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+  hrule(rule = "exact")  %>%
+  height_all(height = 5, part = "all", unit = "mm")
 ```
 
 ## Pendlematriser år 2022
 
+ag_comment: Kopierer kode for de tre tabellene ovenfor å endrer fra 2012 til 2022
+
 ```{r}
+#| label: tbl-p2022
+#| tbl-cap: "Pendlematrise for Haugalandet år 2022."
+# ag_comment: Foreslåpr å lage tabellene «on-the-fly» fra pmat_long så får
+# vi færre objekter å holde styr på. Se også bruk av set_flextable_default()
+# i chunken ovenfor. Denne sparer oss litt skrivearbeide og sikrer oss tabeller med
+# konsistent formatering.
 # Filtrer datasettet for år 2022 og transformer det til en bredere format
-p2022 <- pmat_long %>%
+pmat_long %>%
   filter(aar == 2022) %>%
   select(bo_kom, arb_kom, pendlere) %>%
   pivot_wider(names_from = arb_kom, values_from = pendlere, names_sort = TRUE) %>%
   mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
   arrange(bo_kom) %>%
-  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
-
-# Skriv ut 'p2022' for å bekrefte endringene
-print(p2022)
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom)) |> 
+  flextable() |>
+  # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+  fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+  hrule(rule = "exact")  %>%
+  height_all(height = 5, part = "all", unit = "mm")
 ```
 
 ```{r}
-p2022_percent <- pmat_long %>%
+#| label: tbl-p2022_bo_percent
+#| tbl-cap: "Dem som bor på Haugalandet og andelen som jobber i de ulike kommunene."
+# ag_comment: Foreslå igjen å gjøre dette «on-the-fly»
+pmat_long %>%
   filter(aar == 2022) %>%
   group_by(bo_kom) %>%
   mutate(total_pendlere = sum(pendlere)) %>%
   ungroup() %>%
-  mutate(bo_percent = round((pendlere / total_pendlere) * 100, 1)) %>%
   select(bo_kom, arb_kom, bo_percent) %>%
   pivot_wider(names_from = arb_kom, values_from = bo_percent, names_sort = TRUE) %>%
   mutate(bo_kom = factor(bo_kom, levels = ordKom)) %>%
   arrange(bo_kom) %>%
-  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom))
-
-# Skriv ut 'p2022_percent' for å bekrefte endringene
-print(p2022_percent)
+  select(`Bo kom.\\ Arb. kom` = bo_kom, all_of(ordKom)) |> 
+  flextable() |>
+  # ag_comment: Her velger vi to desimaler og setter på %-tegn
+  colformat_double(digits = 2, suffix = "%") |> 
+  # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+  fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+  hrule(rule = "exact")  %>%
+  height_all(height = 5, part = "all", unit = "mm")
 ```
 
 ```{r}
-p2022_arb_percent <- pmat_long %>%
+#| label: tbl-p2022-arb-percent
+#| tbl-cap: "Dem som arbeider på Haugalandet og andelen som bor i de ulike kommunene."
+# ag_comment: «on-the-fly» tabell
+pmat_long %>%
   filter(aar == 2022) %>%
   group_by(arb_kom) %>%
   mutate(total_arb = sum(pendlere)) %>%
   ungroup() %>%
-  mutate(arb_percent = round((pendlere / total_arb) * 100, 1)) %>%
   select(arb_kom, bo_kom, arb_percent) %>%
   pivot_wider(names_from = bo_kom, values_from = arb_percent, names_sort = TRUE) %>%
   mutate(arb_kom = factor(arb_kom, levels = ordKom)) %>%
   arrange(arb_kom) %>%
-  select(`Arb. kom\\ Bo kom` = arb_kom, all_of(ordKom))
-
-# Skriv ut 'p2022_arb_percent' for å bekrefte endringene
-print(p2022_arb_percent)
+  select(`Arb. kom\\ Bo kom` = arb_kom, all_of(ordKom)) |> 
+  flextable() |>
+  colformat_double(digits = 2, suffix = "%") |> 
+  # a4 8.268 in - 1 in left margin - 1 in right margin = 6.268 in
+  fit_to_width(max_width = 6.268, inc = 1L, max_iter = 20, unit = "in") |>
+  hrule(rule = "exact")  %>%
+  height_all(height = 5, part = "all", unit = "mm")
 ```
 
 # Spørsmål

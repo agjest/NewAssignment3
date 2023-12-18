@@ -1,7 +1,27 @@
 ---
 title: "ag comments"
-format: html
+format: 
+  html: default
+  pdf: default
 editor: visual
 ---
 
--   
+-   Hadde litt problem med labels som var like i noen chunker.
+    Fikset dem.
+
+-   Jeg har insett at antall desimaler bør velges når tabellene genereres og ikke når bo_percent og arb_percent beregnes.
+    Gir økt fleksibilitet.
+    Har derfor tatt bort round() i uttrykkene for bo_percent og arb_percent.
+    Avrunding skjer nå vha colformat_double() i genereringen av flextable tabellene.
+
+-   Lagt inn noen #\| paged.print: false for å få console output isteden for at output «grabbes» av tabell output i quarto document.
+
+-   Endret noe på genereringen av tabellene.
+    Foreslår å generere dem «on-the-fly» så får vi færre objekt som roter til environment.
+    Gir samme tabeller som dere kom frem til (bortsett fra nå 2 desimaler).
+
+-   Ønsker dere å unngå at tabellene blir splittet over sider i pdf-utgaven kan dere legge inn noen `\pagebreak[4]` før genereringen av disse tabellene.
+
+-   Flott løst oppgave.
+    Se mine forslag til forenkling av koden for å generere tabellene.
+    Godkjent
